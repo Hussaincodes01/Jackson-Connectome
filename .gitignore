@@ -1,0 +1,18 @@
+# Connectome data — 1.05 GB, kept on disk, never in git history
+*.feather
+
+# Compiled graph artifacts
+artifacts/
+*.npz
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Outputs
+out/
+figures/
+*.log
