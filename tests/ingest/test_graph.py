@@ -55,3 +55,36 @@ def test_hash_mismatch_refuses_to_load(tmp_path, graph):
     bad.with_suffix(".manifest.json").write_text(json.dumps(manifest))
     with pytest.raises(GraphHashMismatch):
         load_graph(bad)
+
+
+def test_missing_manifest_refuses_to_load(tmp_path):
+    """When verify=True (default), a missing manifest must raise GraphHashMismatch."""
+    data = dict(np.load(GRAPH, allow_pickle=False))
+    bad = tmp_path / "graph_t2.npz"
+    np.savez(bad, **data)
+    # Do NOT write a manifest file
+    with pytest.raises(GraphHashMismatch):
+        load_graph(bad)
+
+
+def test_manifest_without_content_hash_refuses_to_load(tmp_path):
+    """When verify=True (default), a manifest lacking content_hash key must raise."""
+    data = dict(np.load(GRAPH, allow_pickle=False))
+    bad = tmp_path / "graph_t2.npz"
+    np.savez(bad, **data)
+    # Write a manifest without content_hash
+    manifest = json.loads(GRAPH.with_suffix(".manifest.json").read_text())
+    del manifest["content_hash"]
+    bad.with_suffix(".manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(GraphHashMismatch):
+        load_graph(bad)
+
+
+def test_verify_false_skips_manifest_requirement(tmp_path):
+    """When verify=False, loading without a manifest must succeed."""
+    data = dict(np.load(GRAPH, allow_pickle=False))
+    no_check = tmp_path / "graph_t2.npz"
+    np.savez(no_check, **data)
+    # Do NOT write a manifest file
+    g = load_graph(no_check, verify=False)
+    assert g.n_neurons == 166_700

@@ -56,7 +56,17 @@ def load_graph(path: Path, verify: bool = True) -> Graph:
     manifest_path = Path(path).with_suffix(".manifest.json")
     meta = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
 
-    if verify and "content_hash" in meta:
+    if verify:
+        if not manifest_path.exists():
+            raise GraphHashMismatch(
+                f"manifest file missing for {path} -- verification required but "
+                f"no manifest found at {manifest_path}"
+            )
+        if "content_hash" not in meta:
+            raise GraphHashMismatch(
+                f"content_hash missing from manifest {manifest_path} -- "
+                f"verification required but hash key not found"
+            )
         actual = content_hash(data["indptr"], data["indices"], data["weights"])
         if actual != meta["content_hash"]:
             raise GraphHashMismatch(
