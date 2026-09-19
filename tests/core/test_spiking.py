@@ -12,14 +12,23 @@ def two_neuron_net(weight: float, **kw):
     return LIFNetwork(indptr, indices, weights, LIFParams(**kw))
 
 
-def test_spike_fires_exactly_at_threshold():
-    # tau_m is enormous so the membrane update is a no-op; otherwise V decays
-    # to -45.34 before the threshold check and this would silently pass for
-    # the wrong reason.
-    net = two_neuron_net(1.0, tau_m=1e9)
-    net.v[0] = -45.0  # exactly v_th
-    spikes = net.step()
-    assert bool(spikes[0]) is True
+def test_spike_fires_when_threshold_is_reached():
+    """Back-solves the pre-update voltage so the exponential-Euler step lands a
+    controlled margin above or below v_th. Works for any tau_m, and needs no
+    epsilon in the production threshold."""
+    net = two_neuron_net(1.0)
+    p = net.params
+    margin = 1e-9
+
+    def pre_voltage_landing_on(target):
+        return p.v_rest + (target - p.v_rest) / net.decay_m
+
+    net.v[0] = pre_voltage_landing_on(p.v_th + margin)
+    assert bool(net.step()[0]) is True, "must fire when the update reaches threshold"
+
+    net.reset()
+    net.v[0] = pre_voltage_landing_on(p.v_th - margin)
+    assert bool(net.step()[0]) is False, "must not fire just below threshold"
 
 
 def test_no_spike_just_below_threshold():
