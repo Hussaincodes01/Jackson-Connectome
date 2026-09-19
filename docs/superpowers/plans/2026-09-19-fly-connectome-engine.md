@@ -1178,7 +1178,10 @@ def two_neuron_net(weight: float, **kw):
 
 
 def test_spike_fires_exactly_at_threshold():
-    net = two_neuron_net(1.0)
+    # tau_m is enormous so the membrane update is a no-op; otherwise V decays
+    # to -45.34 before the threshold check and this would silently pass for
+    # the wrong reason.
+    net = two_neuron_net(1.0, tau_m=1e9)
     net.v[0] = -45.0  # exactly v_th
     spikes = net.step()
     assert bool(spikes[0]) is True
@@ -1208,9 +1211,11 @@ def test_refractory_lasts_exactly_ceil_tref_over_dt_steps():
         net.step(torch.tensor([100.0, 0.0]))
         assert abs(float(net.v[0]) - (-52.0)) < 1e-6, "clamped during refractory"
         assert int(net.refrac[0]) == expected
-    # Free now: the same drive must move the membrane.
-    net.step(torch.tensor([100.0, 0.0]))
-    assert float(net.v[0]) > -52.0
+    # Free now: the same drive reaches threshold and fires. (Checking the
+    # spike, not the voltage -- a spike resets V to v_rest, so asserting
+    # v > v_rest here would assert the opposite of correct behaviour.)
+    spikes = net.step(torch.tensor([100.0, 0.0]))
+    assert bool(spikes[0]) is True
 
 
 def test_excitatory_edge_raises_postsynaptic_current():
@@ -1906,7 +1911,11 @@ def test_partners_that_respond_are_connectome_partners(net, graph):
 
 def test_inhibitory_source_suppresses_rather_than_drives(net, graph):
     """A GABAergic population must lower its targets' voltages."""
-    gaba_sources = np.flatnonzero(graph.weights[graph.indptr[:-1]] < 0)
+    # Only rows that actually have out-edges; indptr[i] == indptr[i+1] for an
+    # empty row and would index past the end of weights for trailing rows.
+    has_edges = np.flatnonzero(np.diff(graph.indptr) > 0)
+    starts = graph.indptr[has_edges]
+    gaba_sources = has_edges[graph.weights[starts] < 0]
     assert len(gaba_sources) > 0
     src = gaba_sources[:200]
     targets = monosynaptic_targets(graph, src, min_weight=0.0)[:500]
