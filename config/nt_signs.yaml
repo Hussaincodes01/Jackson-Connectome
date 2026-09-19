@@ -1,0 +1,11 @@
+# Presynaptic neurotransmitter -> synaptic sign (Dale's law).
+# Sign 0 means the neuron contributes no output; its out-edges are dropped.
+# glutamate is inhibitory in Drosophila via GluCl-alpha. Flip it here to run
+# the sensitivity check the spec calls for -- no code change required.
+acetylcholine: 1
+gaba: -1
+glutamate: -1
+histamine: -1
+dopamine: 0
+octopamine: 0
+serotonin: 0
