@@ -26,6 +26,8 @@ All figures below were measured directly from the local files, not taken from pu
 |---|---|
 | Total synaptic edges (minconf 0.5) | 151,856,684 |
 | Edges with weight >= 2 | 57,670,765 (38.0%) |
+| ...of those, both endpoints annotated | 15,283,237 (26.5% of w>=2) |
+| **Edges in the compiled graph (T=2)** | **14,806,510** after dropping sign-0 sources |
 | Edges with weight >= 3 | 23,014,406 (15.2%) |
 | Max edge weight | 2,591 |
 | Annotated neurons (with superclass) | 166,700 |
@@ -99,7 +101,7 @@ Leaky integrate-and-fire, exponential synapses, one compartment per neuron. Same
 
 ### The hot loop is event-driven — mandatory, not an optimization
 
-Dense sparse-matrix x spike-vector touches all 57.7M edges every step: ~460 MB of memory traffic, capped by bandwidth at **~240 steps/s** on an RTX 2050 = 0.24x real time.
+Dense sparse-matrix x spike-vector touches every edge each step. Measured at build time, the compiled graph holds **14,806,510** edges -- not the 57.7M that survive thresholding, because 73.5% of those have a postsynaptic partner never traced to an annotated neuron, and an unidentifiable body cannot be simulated. That is ~118 MB of traffic per dense step rather than the ~460 MB first estimated, putting the dense ceiling near **950 steps/s** -- still at or below real time, and still the reason to stay event-driven.
 
 Event-driven propagation touches only out-edges of neurons that actually fired. At 1–3% spiking per millisecond that is ~9 MB/step -> **~10,000 steps/s**, comfortably faster than real time.
 
@@ -235,7 +237,7 @@ Live and batch fail differently on purpose: a frozen stream is dead, but an expe
 
 ### Performance budget (RTX 2050, 4 GB)
 
-Graph ~460 MB VRAM · neuron state < 10 MB · encode ~1 ms/frame · sim step ~0.1 ms at nominal activity · **end-to-end photon-to-parameter latency target < 50 ms.**
+Graph ~118 MB VRAM (measured, 14.8M edges) · neuron state < 10 MB · encode ~1 ms/frame · sim step ~0.1 ms at nominal activity · **end-to-end photon-to-parameter latency target < 50 ms.**
 
 ---
 

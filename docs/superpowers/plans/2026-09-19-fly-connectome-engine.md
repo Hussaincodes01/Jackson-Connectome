@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- **Edge threshold default `T = 2`**, yielding exactly **57,670,765** edges. Configurable; `T=3` gives 23,014,406 and `T=5` gives 7,622,864.
+- **Edge threshold default `T = 2`**, yielding exactly **57,670,765** edges above threshold. Of those, **15,283,237** have both endpoints among the 166,700 annotated neurons, and the compiled graph holds **14,806,510** after dropping sign-0 sources. Task 3 asserts the first number; everything downstream runs on the last. Configurable; `T=3` gives 23,014,406 above threshold and `T=5` gives 7,622,864.
 - **Total edges in source file: 151,856,684.** Total annotated neurons: **166,700**.
 - **NT sign map:** acetylcholine `+1`; GABA, glutamate, histamine `-1`; dopamine, octopamine, serotonin `0`; unclear/missing falls back to cell-type consensus, then `0`. Sign `0` means the neuron's outgoing edges are dropped at build time.
 - **Sign is a presynaptic property** applied to all of a neuron's out-edges (Dale's law). Never per-edge.
@@ -653,7 +653,7 @@ Open `artifacts/graph_t2.manifest.json` and confirm by eye:
 - `excitatory_neurons` is near `103720` and `inhibitory_neurons` near `59262`
 - `content_hash` is present
 
-Also check the artifact size: `ls -lh artifacts/graph_t2.npz` — expect roughly 500–700 MB on disk.
+Also check the artifact size: `ls -lh artifacts/graph_t2.npz` — expect roughly 160 MB on disk.
 
 - [ ] **Step 7: Commit**
 
