@@ -84,12 +84,12 @@ class LIFNetwork:
             return
         starts = self.indptr[spike_idx]
         counts = self.indptr[spike_idx + 1] - starts
-        total = int(counts.sum())
-        if total == 0:
-            return
         row_of = torch.repeat_interleave(
             torch.arange(spike_idx.numel(), device=self.device), counts
         )
+        total = row_of.numel()
+        if total == 0:
+            return
         offsets = torch.cumsum(counts, 0) - counts
         flat = starts[row_of] + (
             torch.arange(total, device=self.device) - offsets[row_of]
@@ -113,11 +113,10 @@ class LIFNetwork:
         )
 
         refractory = self.refrac > 0
-        if bool(refractory.any()):
-            self.v = torch.where(
-                refractory, torch.full_like(self.v, p.v_reset), self.v
-            )
-            self.refrac = torch.clamp(self.refrac - 1, min=0)
+        self.v = torch.where(
+            refractory, torch.full_like(self.v, p.v_reset), self.v
+        )
+        self.refrac = torch.clamp(self.refrac - 1, min=0)
 
         spikes = self.v >= p.v_th
         spike_idx = spikes.nonzero(as_tuple=True)[0]
