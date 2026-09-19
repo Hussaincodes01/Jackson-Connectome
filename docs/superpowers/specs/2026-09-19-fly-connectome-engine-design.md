@@ -103,7 +103,19 @@ Leaky integrate-and-fire, exponential synapses, one compartment per neuron. Same
 
 Dense sparse-matrix x spike-vector touches every edge each step. Measured at build time, the compiled graph holds **14,806,510** edges -- not the 57.7M that survive thresholding, because 73.5% of those have a postsynaptic partner never traced to an annotated neuron, and an unidentifiable body cannot be simulated. That is ~118 MB of traffic per dense step rather than the ~460 MB first estimated, putting the dense ceiling near **950 steps/s** -- still at or below real time, and still the reason to stay event-driven.
 
-Event-driven propagation touches only out-edges of neurons that actually fired. At 1–3% spiking per millisecond that is ~9 MB/step -> **~10,000 steps/s**, comfortably faster than real time.
+Event-driven propagation touches only the out-edges of neurons that actually fired.
+
+**Measured on the target RTX 2050 with the real 14.8M-edge graph, a full step runs far below the ~10,000 steps/s this analysis originally predicted.** The prediction counted memory traffic and ignored kernel-launch latency, which dominates: at 166,700 neurons each elementwise operation moves only 0.67 MB, so a step is a sequence of ~15 short kernels rather than a bandwidth-bound job. Measured full-step throughput:
+
+| Implementation | steps/s | vs real time |
+|---|---|---|
+| Event-driven gather, with per-step CPU syncs | 230 | 0.23x at dt=1ms |
+| Event-driven gather, sync-free | 271 | 0.27x at dt=1ms |
+| Fixed-shape dense spMV | 435 | 0.87x at dt=2ms |
+
+Two conclusions follow, and both correct claims made earlier in this document. First, **dense propagation is not a build failure at this graph size** -- it is the faster of the two, because at ~2.5% spiking with average out-degree 89 the gather's index arithmetic costs more than streaming 59 MB of weights. Event-driven remains the better choice at low activity and is kept, but the claim that dense caps at 240 steps/s was computed against an edge count 4x too high. Second, **real-time simulation at dt=1ms is not achievable on this hardware**; dt=2ms is close and dt=4ms clears it. `torch.compile`/CUDA graphs, which would attack the launch overhead directly, are unavailable (no Triton on Windows).
+
+Per-step CPU-GPU synchronisation is therefore forbidden in the hot loop: no `int(x.sum())`, no `bool(x.any())`. Those alone cost ~18%.
 
 Per step: `spikes.nonzero()` -> build a flat gather index into those rows' CSR ranges via `repeat_interleave` -> one `index_add_` scattering signed weights into synaptic current.
 
@@ -237,7 +249,7 @@ Live and batch fail differently on purpose: a frozen stream is dead, but an expe
 
 ### Performance budget (RTX 2050, 4 GB)
 
-Graph ~118 MB VRAM (measured, 14.8M edges) · neuron state < 10 MB · encode ~1 ms/frame · sim step ~0.1 ms at nominal activity · **end-to-end photon-to-parameter latency target < 50 ms.**
+Graph ~118 MB VRAM (measured, 14.8M edges) · neuron state < 10 MB · encode ~1 ms/frame · sim step ~3.7 ms measured at nominal activity (not the 0.1 ms first estimated) · **end-to-end photon-to-parameter latency target < 50 ms.**
 
 ---
 
