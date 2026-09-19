@@ -119,7 +119,9 @@ class LIFNetwork:
             )
             self.refrac = torch.clamp(self.refrac - 1, min=0)
 
-        spikes = self.v >= p.v_th
+        # Spike at threshold, accounting for floating-point precision errors in the
+        # exponential-Euler update (e.g., decay_m with very large tau_m).
+        spikes = self.v > (p.v_th - 1e-8)
         spike_idx = spikes.nonzero(as_tuple=True)[0]
         if spike_idx.numel():
             self.v[spike_idx] = p.v_reset
