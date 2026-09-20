@@ -3617,17 +3617,33 @@ def _tune_groups(graph) -> dict[str, np.ndarray]:
     return groups
 
 
-def _tuning_drive(net, seed: int = 12345):
-    """A fixed, reproducible background stimulus for calibration.
+def _tuning_drive(net, seed: int = 12345, n_seed_neurons: int = 2000):
+    """A fixed, reproducible calibration stimulus.
 
-    Tuning against zero input would be meaningless -- with no activity the
-    update rule can only ratchet gains upward. A deterministic noise drive
-    gives every condition, real and null, the identical calibration stimulus.
+    Two requirements pull in opposite directions and both must be met.
+
+    Tuning against zero input is meaningless: with nothing firing, the update
+    rule can only ratchet gains upward forever. But a uniform drive strong
+    enough to make neurons fire BY ITSELF is just as bad, and less obviously
+    so. `gain` scales only synaptic contributions, so any neuron driven over
+    threshold by the external current alone fires at a rate no gain setting can
+    change -- calibration then silently does nothing.
+
+    The synaptic filter amplifies a constant drive by 1/(1 - exp(-dt/tau_syn))
+    = 5.52x at the defaults, and threshold sits 7 mV above rest, so any uniform
+    drive above ~1.27 mV/step is self-igniting. (An earlier version of this
+    function used rand*2.0 and was mostly above that line.)
+
+    So: a subthreshold background everywhere, plus a sparse set of seed neurons
+    driven hard enough to fire and start recurrent activity. Population rates
+    are then genuinely a function of gain, which is what calibration adjusts.
+    Deterministic, and identical for real and null graphs.
     """
     generator = torch.Generator(device="cpu").manual_seed(seed)
-    drive = (
-        torch.rand(net.n_neurons, generator=generator) * 2.0
-    ).to(net.device)
+    drive = torch.full((net.n_neurons,), 0.3)          # 0.3 * 5.52 = 1.66 mV, subthreshold
+    seeds = torch.randperm(net.n_neurons, generator=generator)[:n_seed_neurons]
+    drive[seeds] = 14.0                                 # comfortably suprathreshold
+    drive = drive.to(net.device, net.i_syn.dtype)
     return lambda _: drive
 
 
