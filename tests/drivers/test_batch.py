@@ -72,3 +72,16 @@ def test_batch_driver_halts_on_runaway():
             net, StubEncoder(4), src, {"driven": np.array([0])},
             n_frames=5, steps_per_frame=10, detector=detector,
         )
+
+
+def test_batch_driver_rejects_a_clamp_mode_detector():
+    """The batch driver must refuse to clamp. Accepting a clamp-mode detector
+    would let a sweep silently halve its gain and keep recording."""
+    net = tiny_net()
+    src = SyntheticSource(lambda i: np.full((4, 4), 1.0, np.float32), 4, 4)
+    with pytest.raises(ValueError, match="halt-mode"):
+        run_batch(
+            net, StubEncoder(4), src, {"driven": np.array([0])},
+            n_frames=2, steps_per_frame=4,
+            detector=RunawayDetector(ceiling=0.0, window=1, mode="clamp"),
+        )
