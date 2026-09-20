@@ -33,26 +33,33 @@ def test_driven_population_actually_spikes(net, graph):
 
 
 def test_monosynaptic_latency_is_one_to_three_ms(net, graph):
-    """One synapse costs one timestep of transmission plus membrane charging.
+    """One synapse costs one timestep of transmission plus membrane charging,
+    measured from the source's OWN spike time -- not from injection onset,
+    which would also bundle in how long the source takes to reach threshold.
     Anything outside 1-3 ms means the propagation path is wrong."""
     src = graph.type_index("LPLC2")
-    targets = monosynaptic_targets(graph, src, min_weight=10.0)
+    targets = np.setdiff1d(monosynaptic_targets(graph, src, min_weight=10.0), src)
     assert len(targets) >= 5, "not enough strong postsynaptic partners to test"
 
     out = inject_and_record(net, src, targets, amplitude=30.0, steps=60)
-    latencies = out["first_spike_ms"]
-    responded = latencies[~np.isnan(latencies)]
+    assert not np.isnan(out["source_first_spike_ms"]), "source population never fired"
+
+    relative = out["first_spike_ms"] - out["source_first_spike_ms"]
+    responded = relative[~np.isnan(relative)]
     assert len(responded) > 0, "no monosynaptic partner responded"
 
     median = float(np.median(responded))
-    assert 1.0 <= median <= 3.0, f"median monosynaptic latency {median} ms is out of range"
+    assert 1.0 <= median <= 3.0, (
+        f"median monosynaptic latency {median} ms is out of range "
+        f"(source fired at {out['source_first_spike_ms']} ms)"
+    )
 
 
 def test_partners_that_respond_are_connectome_partners(net, graph):
     """Responses must land on neurons the wiring actually predicts, not
     scattered across the network."""
     src = graph.type_index("LPLC2")
-    targets = monosynaptic_targets(graph, src, min_weight=10.0)
+    targets = np.setdiff1d(monosynaptic_targets(graph, src, min_weight=10.0), src)
     unconnected = np.setdiff1d(
         graph.type_index("L1"), monosynaptic_targets(graph, src, min_weight=0.0)
     )[: len(targets)]
@@ -82,6 +89,5 @@ def test_inhibitory_source_suppresses_rather_than_drives(net, graph):
 
     net.reset()
     baseline = float(net.v[targets].mean())
-    out = inject_and_record(net, src, targets, amplitude=30.0, steps=30)
-    assert out["n_responding"] >= 0
+    inject_and_record(net, src, targets, amplitude=30.0, steps=30)
     assert float(net.v[targets].mean()) <= baseline + 1e-3
