@@ -33,7 +33,14 @@ class LaminaEncoder:
         self.adapt_decay = math.exp(-dt_ms / tau_adapt_ms)
 
         self.channels = []
-        for cell_type, polarity in (("L1", +1.0), ("L2", -1.0)):
+        # BOTH lamina monopolar types hyperpolarise to a light increment:
+        # photoreceptors are histaminergic and inhibitory onto both. The
+        # ON/OFF split is NOT imposed here -- it emerges downstream from the
+        # connectome's own signs (L1 is inhibitory, L2 excitatory), which is
+        # the whole point of driving a real wiring diagram. An earlier version
+        # drove L1 with +1 polarity; L1 then fired 55,955 times and clamped
+        # Mi1 -- T4's dominant input -- off entirely, so T4 never spiked.
+        for cell_type, polarity in (("L1", -1.0), ("L2", -1.0)):
             for side in ("R", "L"):
                 lattice = build_lattice(graph, cell_type, side)
                 if len(lattice.neuron_idx) == 0:

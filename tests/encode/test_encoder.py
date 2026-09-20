@@ -39,15 +39,17 @@ def test_only_lamina_neurons_receive_current(encoder, graph):
     assert len(np.setdiff1d(driven, lamina)) == 0, "current leaked outside L1/L2"
 
 
-def test_l1_and_l2_receive_opposite_polarity(encoder, graph):
+def test_l1_and_l2_both_hyperpolarise_to_light(encoder, graph):
+    """Photoreceptors are histaminergic and inhibitory onto BOTH lamina
+    monopolar types, so a light increment hyperpolarises both. The ON/OFF
+    split is not imposed here -- it emerges downstream from L1 being
+    inhibitory and L2 excitatory in the connectome itself."""
     encoder.reset()
     out = encoder.encode(frame(1.0))     # bright against a dark-adapted mean
     l1 = out[graph.type_index("L1")]
     l2 = out[graph.type_index("L2")]
-    l1_active = l1[l1 != 0]
-    l2_active = l2[l2 != 0]
-    assert l1_active.mean() > 0, "L1 should depolarise to positive contrast"
-    assert l2_active.mean() < 0, "L2 should carry the opposite sign"
+    assert l1[l1 != 0].mean() < 0, "L1 should hyperpolarise to a light increment"
+    assert l2[l2 != 0].mean() < 0, "L2 should hyperpolarise to a light increment"
 
 
 def test_adaptation_decays_response_to_a_constant_scene(encoder):

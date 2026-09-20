@@ -29,6 +29,26 @@ class LIFParams:
     t_ref: float = 2.2
     dt: float = 1.0
 
+    # Both default to neutral so the unit tests, which use hand-built weights
+    # and exact expected values, keep passing unchanged. Scientific runs use
+    # the BIOPHYSICAL preset below.
+    weight_scale: float = 1.0   # mV per unit synapse count; 1.0 = raw counts
+    i_tonic: float = 0.0        # constant background current, mV per step
+
+
+# Parameters for scientific runs on the real connectome.
+#
+# weight_scale converts synapse counts to millivolts (~0.275 mV per synapse).
+# Without it, |w| reaching 2,591 against a 7 mV threshold drove 8,506 neurons
+# below -200 mV (minimum -3,515 mV) through runaway inhibition.
+#
+# i_tonic gives every neuron a standing baseline. The fly's ON pathway signals
+# by DISINHIBITION -- light hyperpolarises L1, releasing Mi1 -- and releasing
+# an already-silent neuron from inhibition does nothing. Without a baseline the
+# entire ON pathway is mute: T4 fired exactly zero times across a full battery.
+# Measured: 1.3 puts the network at ~1.6% spiking with T4 and T5 both active.
+BIOPHYSICAL = LIFParams(weight_scale=0.275, i_tonic=1.3)
+
 
 class LIFNetwork:
     def __init__(
@@ -45,7 +65,11 @@ class LIFNetwork:
 
         self.indptr = torch.as_tensor(np.asarray(indptr), dtype=torch.int64, device=self.device)
         self.indices = torch.as_tensor(np.asarray(indices), dtype=torch.int64, device=self.device)
-        self.weights = torch.as_tensor(np.asarray(weights), dtype=torch.float32, device=self.device)
+        self.weights = torch.as_tensor(
+            np.asarray(weights) * self.params.weight_scale,
+            dtype=torch.float32,
+            device=self.device,
+        )
 
         p = self.params
         self.decay_m = math.exp(-p.dt / p.tau_m)
@@ -102,6 +126,8 @@ class LIFNetwork:
         p = self.params
 
         self.i_syn.mul_(self.decay_s)
+        if p.i_tonic:
+            self.i_syn.add_(p.i_tonic)
         if input_current is not None:
             self.i_syn.add_(input_current.to(self.device, self.i_syn.dtype))
 

@@ -18,7 +18,7 @@ from flybrain.analysis.metrics import (
     intervals_overlap,
     looming_discrimination,
 )
-from flybrain.core.lif import LIFNetwork, LIFParams
+from flybrain.core.lif import BIOPHYSICAL, LIFNetwork, LIFParams
 from flybrain.core.tuning import homeostatic_tune
 from flybrain.drivers.batch import run_batch
 from flybrain.encode.encoder import LaminaEncoder
@@ -31,7 +31,16 @@ N_FRAMES = 90
 
 
 def _watch_groups(graph) -> dict[str, np.ndarray]:
-    return {
+    # T4/T5 are watched PER SUBTYPE. Each of a/b/c/d is tuned to a different
+    # cardinal direction, so summing them gives a population total that is
+    # direction-invariant by construction -- measuring it would force DSI to
+    # zero no matter what the network did.
+    groups = {
+        f"{fam}{s}": graph.type_index(f"{fam}{s}")
+        for fam in ("T4", "T5")
+        for s in "abcd"
+    }
+    groups.update({
         "T4": graph.types_matching("T4"),
         "T5": graph.types_matching("T5"),
         "escape": np.concatenate(
@@ -39,7 +48,8 @@ def _watch_groups(graph) -> dict[str, np.ndarray]:
         ),
         "L1": graph.type_index("L1"),
         "L2": graph.type_index("L2"),
-    }
+    })
+    return groups
 
 
 def _tune_groups(graph) -> dict[str, np.ndarray]:
@@ -82,7 +92,7 @@ def _tuning_drive(net, seed: int = 12345, n_seed_neurons: int = 2000):
 
 
 def _one_condition(graph, indptr, indices, weights, device, seed) -> dict:
-    net = LIFNetwork(indptr, indices, weights, LIFParams(), device=device)
+    net = LIFNetwork(indptr, indices, weights, BIOPHYSICAL, device=device)
     encoder = LaminaEncoder(graph, HEIGHT, WIDTH)
     watch = _watch_groups(graph)
 
@@ -105,9 +115,13 @@ def _one_condition(graph, indptr, indices, weights, device, seed) -> dict:
     loom = sweep(looming_disc(HEIGHT, WIDTH, n_frames=N_FRAMES))
     flat = sweep(contrast_step(HEIGHT, WIDTH, low=0.5, high=0.5, switch_frame=10_000))
 
+    # Textbook DSI: the response of the subtypes tuned to the stimulus
+    # direction, under their preferred stimulus versus the opposite one.
+    # The "a" subtypes are tuned front-to-back (0 deg), which is the
+    # `preferred` sweep's direction.
     dsi = direction_selectivity_index(
-        float(preferred["T4"].sum() + preferred["T5"].sum()),
-        float(opposite["T4"].sum() + opposite["T5"].sum()),
+        float(preferred["T4a"].sum() + preferred["T5a"].sum()),
+        float(opposite["T4a"].sum() + opposite["T5a"].sum()),
     )
     loom_score = looming_discrimination(loom["escape"], flat["escape"])
 
