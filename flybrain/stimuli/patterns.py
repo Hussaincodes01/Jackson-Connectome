@@ -20,14 +20,7 @@ def drifting_grating(
 
     def generate(index: int) -> np.ndarray:
         phase = 2 * math.pi * (projection - index * speed_px_per_frame) / spatial_period_px
-        # cos, not sin: for a pure sinusoid, direction 0 vs 180 is a mirror
-        # flip of the same travelling wave (projection negates), and at
-        # index * speed_px_per_frame == spatial_period_px / 4 a sine-based
-        # phase collapses to an identical frame for every pixel (cos of the
-        # offset term hits exactly zero). cos hits that degeneracy at a
-        # different, non-integer-frame offset, so opposite directions stay
-        # distinguishable at the frame indices stimuli sweeps actually use.
-        return ((np.cos(phase) + 1.0) / 2.0).astype(np.float32)
+        return ((np.sin(phase) + 1.0) / 2.0).astype(np.float32)
 
     return generate
 

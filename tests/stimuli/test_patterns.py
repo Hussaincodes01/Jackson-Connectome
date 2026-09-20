@@ -18,9 +18,16 @@ def test_horizontal_grating_moves_between_frames():
 
 
 def test_opposite_directions_produce_different_sequences():
+    """Compares a SEQUENCE, not one frame. A sinusoidal grating at a single
+    instant is a static pattern carrying no direction -- opposite directions
+    are genuinely identical at certain phases (frames 3 and 9 at these
+    defaults), so a single-frame assertion tests the phase convention rather
+    than the stimulus."""
     a = drifting_grating(H, W, 0.0)
     b = drifting_grating(H, W, 180.0)
-    assert not np.allclose(a(3), b(3))
+    seq_a = np.stack([a(i) for i in range(6)])
+    seq_b = np.stack([b(i) for i in range(6)])
+    assert not np.allclose(seq_a, seq_b)
 
 
 def test_grating_is_periodic_along_its_axis():
