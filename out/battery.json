@@ -1,0 +1,289 @@
+{
+  "dsi": {
+    "real": {
+      "mean": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "weight_permutation": {
+      "mean": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "degree_preserving": {
+      "mean": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "sign_permutation": {
+      "mean": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "type_preserving": {
+      "mean": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "ci": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "looming": {
+    "real": {
+      "mean": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "weight_permutation": {
+      "mean": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "degree_preserving": {
+      "mean": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "sign_permutation": {
+      "mean": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "type_preserving": {
+      "mean": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "ci": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "raw": {
+    "real": [
+      {
+        "seed": 0,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 1,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 2,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 3,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 4,
+        "dsi": 0.0,
+        "looming": 0.0
+      }
+    ],
+    "weight_permutation": [
+      {
+        "seed": 0,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 1,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 2,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 3,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 4,
+        "dsi": 0.0,
+        "looming": 0.0
+      }
+    ],
+    "degree_preserving": [
+      {
+        "seed": 0,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 1,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 2,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 3,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 4,
+        "dsi": 0.0,
+        "looming": 0.0
+      }
+    ],
+    "sign_permutation": [
+      {
+        "seed": 0,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 1,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 2,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 3,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 4,
+        "dsi": 0.0,
+        "looming": 0.0
+      }
+    ],
+    "type_preserving": [
+      {
+        "seed": 0,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 1,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 2,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 3,
+        "dsi": 0.0,
+        "looming": 0.0
+      },
+      {
+        "seed": 4,
+        "dsi": 0.0,
+        "looming": 0.0
+      }
+    ]
+  },
+  "verdict": {
+    "dsi_pass": false,
+    "looming_pass": false,
+    "overall": false,
+    "detail": "dsi_pass=False, looming_pass=False. The real wiring did NOT measurably outperform its shuffle. Report this in the README; it is a finding, not a failure."
+  }
+}
