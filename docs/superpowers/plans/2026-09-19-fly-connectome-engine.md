@@ -3335,6 +3335,14 @@ def run_batch(
     because the running mean is seeded directly from frame 0 rather than
     blended in, so one burn-in frame is sufficient.
     """
+    if detector is not None and detector.mode != "halt":
+        raise ValueError(
+            f"run_batch requires a halt-mode detector, got mode={detector.mode!r}. "
+            "The batch driver must never clamp and keep recording: an experiment "
+            "that silently reduces its gain produces contaminated data that looks "
+            "like a clean run. Clamping belongs to the live driver."
+        )
+
     net.reset()
     if hasattr(encoder, "reset"):
         encoder.reset()
@@ -3362,15 +3370,11 @@ def run_batch(
             fractions.append(net.last_spike_fraction)
             for name, idx in groups.items():
                 results[name][f] += int(spikes[idx].sum())
-            if detector is not None:
-                action = detector.update(net.last_spike_fraction)
-                if action == "halt":
-                    raise RunawayHalt(
-                        f"activity saturated at frame {f}: "
-                        f"{net.last_spike_fraction:.1%} of neurons spiking"
-                    )
-                if action == "clamp":
-                    net.gain.mul_(0.5)
+            if detector is not None and detector.update(net.last_spike_fraction) == "halt":
+                raise RunawayHalt(
+                    f"activity saturated at frame {f}: "
+                    f"{net.last_spike_fraction:.1%} of neurons spiking"
+                )
 
         results["spike_fraction"][f] = float(np.mean(fractions))
 
