@@ -25,7 +25,7 @@ def load_annotations() -> dict:
     """Annotated neurons only -- rows carrying a superclass."""
     tbl = feather.read_table(
         ANNOTATIONS,
-        columns=["bodyId", "type", "superclass", "assignedOlHex1", "assignedOlHex2"],
+        columns=["bodyId", "type", "superclass", "assignedOlHex1", "assignedOlHex2", "somaSide"],
     )
     superclass = np.array(tbl.column("superclass").to_pylist(), dtype=object)
     keep = superclass != None  # noqa: E711 -- object array, `is not None` will not vectorise
@@ -41,6 +41,9 @@ def load_annotations() -> dict:
         [h if h is not None else np.nan for h in tbl.column("assignedOlHex2").to_pylist()],
         dtype=np.float32,
     )[keep]
+    soma_side = np.array(
+        [s if s is not None else "" for s in tbl.column("somaSide").to_pylist()], dtype=object
+    )[keep]
     order = np.argsort(body_ids)
     return {
         "body_ids": body_ids[order],
@@ -48,6 +51,7 @@ def load_annotations() -> dict:
         "superclasses": superclass[keep][order],
         "hex1": hex1[order],
         "hex2": hex2[order],
+        "soma_side": soma_side[order],
     }
 
 
@@ -147,6 +151,9 @@ def build_graph(threshold: int = 2, out_dir: Path = ARTIFACTS) -> Path:
         ),
         hex1=ann["hex1"],
         hex2=ann["hex2"],
+        soma_side=np.array(
+            [s if s is not None else "" for s in ann["soma_side"]], dtype="<U4"
+        ),
         signs=signs,
     )
 

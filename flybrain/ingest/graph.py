@@ -23,6 +23,7 @@ class Graph:
     superclasses: np.ndarray
     hex1: np.ndarray
     hex2: np.ndarray
+    soma_side: np.ndarray
     meta: dict = field(default_factory=dict)
 
     @property
@@ -83,5 +84,6 @@ def load_graph(path: Path, verify: bool = True) -> Graph:
         superclasses=data["superclasses"],
         hex1=data["hex1"],
         hex2=data["hex2"],
+        soma_side=data["soma_side"],
         meta=meta,
     )
