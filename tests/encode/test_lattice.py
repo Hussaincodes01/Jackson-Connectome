@@ -36,8 +36,35 @@ def test_lattice_xy_is_normalised(graph):
     lat = build_lattice(graph, "L1", "R")
     assert lat.xy.shape == (len(lat.neuron_idx), 2)
     assert lat.xy.min() >= 0.0 and lat.xy.max() <= 1.0
-    # A hex lattice must actually span both axes, not collapse to a line.
-    assert np.ptp(lat.xy[:, 0]) > 0.9 and np.ptp(lat.xy[:, 1]) > 0.9
+    # The field must span both axes rather than collapsing to a line, but the
+    # two spans are NOT expected to be equal: preserving hex geometry means the
+    # shorter axis occupies proportionally less of [0, 1].
+    assert np.ptp(lat.xy[:, 0]) > 0.5 and np.ptp(lat.xy[:, 1]) > 0.5
+
+
+def test_lattice_is_isotropic(graph):
+    """All six hex neighbours must be equidistant. Normalising the two axes
+    independently shears the packing and would make motion along one axis
+    appear faster than along another."""
+    lat = build_lattice(graph, "L1", "R")
+    h1, h2, xy = lat.hex1, lat.hex2, lat.xy
+    key = {(a, b): i for i, (a, b) in enumerate(zip(h1, h2))}
+
+    def mean_step(d1, d2):
+        d = [
+            np.linalg.norm(xy[i] - xy[key[(a + d1, b + d2)]])
+            for i, (a, b) in enumerate(zip(h1, h2))
+            if (a + d1, b + d2) in key
+        ]
+        assert len(d) > 100, "not enough neighbour pairs to measure"
+        return float(np.mean(d))
+
+    a, b, c = mean_step(1, 0), mean_step(0, 1), mean_step(1, -1)
+    ratio = max(a, b, c) / min(a, b, c)
+    assert ratio < 1.01, (
+        f"lattice is anisotropic (ratio {ratio:.3f}); the two axes are not "
+        "sharing a scale factor, so hex packing is sheared"
+    )
 
 
 def test_neighbouring_columns_are_near_in_xy(graph):

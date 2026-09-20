@@ -35,15 +35,24 @@ def build_lattice(graph, cell_type: str, side: str) -> HexLattice:
     x = h1 + h2 / 2.0
     y = h2 * (math.sqrt(3.0) / 2.0)
 
-    def norm(a: np.ndarray) -> np.ndarray:
-        span = a.max() - a.min()
-        return (a - a.min()) / span if span > 0 else np.zeros_like(a)
+    # Both axes MUST share one scale factor. Normalising them independently
+    # shears the hexagonal packing (measured anisotropy 1.383), which would
+    # make motion along one axis appear faster than along another and corrupt
+    # any direction-selectivity measurement built on this lattice.
+    x0, y0 = x - x.min(), y - y.min()
+    span = max(np.max(x0), np.max(y0))
+    if span <= 0:
+        nx, ny = np.zeros_like(x0), np.zeros_like(y0)
+    else:
+        nx, ny = x0 / span, y0 / span
+        nx = nx + (1.0 - np.max(nx)) / 2.0      # centre within [0, 1]
+        ny = ny + (1.0 - np.max(ny)) / 2.0
 
     return HexLattice(
         neuron_idx=has_coords,
         hex1=h1,
         hex2=h2,
-        xy=np.stack([norm(x), norm(y)], axis=1),
+        xy=np.stack([nx, ny], axis=1),
         side=side,
     )
 
