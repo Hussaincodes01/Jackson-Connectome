@@ -1553,7 +1553,7 @@ def extract_subgraph(graph, keep: np.ndarray) -> tuple[np.ndarray, np.ndarray, n
 Run: `pytest tests/core/test_gpu_parity.py tests/core/test_performance.py -v -m slow`
 Expected: PASS (4 tests)
 
-If `test_event_driven_loop_clears_realtime` fails, do **not** lower the threshold. It means `_propagate` is touching edges of non-spiking neurons; re-read the gather in `lif.py`.
+If `test_cost_scales_with_activity_not_edge_count` fails, do **not** lower the ratio threshold. A ratio near 1.0 means `_propagate` is touching edges of non-spiking neurons; re-read the gather in `lif.py`. Measured ratios on the target hardware were 3.76x, 5.43x and 3.19x against a 2.0 threshold.
 
 - [ ] **Step 5: MANUAL VERIFICATION**
 
