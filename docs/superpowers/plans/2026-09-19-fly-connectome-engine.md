@@ -3304,10 +3304,30 @@ def run_batch(
     n_frames: int,
     steps_per_frame: int = 33,
     detector=None,
+    burn_in_frames: int = 1,
 ) -> dict[str, np.ndarray]:
+    """Run a stimulus sweep and record per-frame spike counts.
+
+    `burn_in_frames` frames are run BEFORE recording starts and are not
+    included in the results. This is not cosmetic: the encoder's running
+    luminance mean is empty immediately after `reset()`, so the first frame's
+    contrast is computed against a dark-adapted (zero) baseline and comes out
+    fully saturated at the clip bound, every time. Recording it would put an
+    identical, stimulus-independent spike of activity at index 0 of every
+    condition -- real and null alike -- which is exactly the kind of shared
+    artifact that flatters a comparison. It resolves on the very next frame,
+    because the running mean is seeded directly from frame 0 rather than
+    blended in, so one burn-in frame is sufficient.
+    """
     net.reset()
     if hasattr(encoder, "reset"):
         encoder.reset()
+
+    for _ in range(burn_in_frames):
+        frame = source.read()
+        current = torch.as_tensor(encoder.encode(frame), device=net.device)
+        for _ in range(steps_per_frame):
+            net.step(current)
 
     results = {name: np.zeros(n_frames, dtype=np.int64) for name in watch}
     results["spike_fraction"] = np.zeros(n_frames, dtype=np.float64)
