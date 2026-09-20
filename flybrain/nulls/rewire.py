@@ -64,19 +64,35 @@ def sign_permutation(indptr, indices, weights, seed: int):
 def type_preserving_rewire(indptr, indices, weights, types: np.ndarray, seed: int):
     """Randomise individual partners while holding cell-type-to-cell-type
     connection counts fixed. The strictest null: it asks whether the specific
-    wiring matters beyond the type-level summary."""
+    wiring matters beyond the type-level summary.
+
+    Implementation note -- this must be fully vectorised. The obvious version
+    (build a string key per edge, then loop over distinct blocks doing
+    `np.flatnonzero(key == block)`) is infeasible on the real graph: it
+    allocates a 3.9 GB string array and there are 2,093,384 distinct
+    (pre-type -> post-type) blocks against 14.8M edges, i.e. ~31 trillion
+    comparisons. It never finishes.
+
+    Instead: encode types as integers, form one int64 block id per edge, and
+    permute within blocks using a single lexsort. Sorting by (block, random)
+    and by (block, stable) yields two orderings that visit the same edges in
+    the same block order, so assigning one through the other permutes targets
+    strictly within each block. Runs in ~20 s on the full graph.
+    """
     rng = np.random.default_rng(seed)
     counts = np.diff(indptr)
     source_of_edge = np.repeat(np.arange(len(counts)), counts)
-    pre_types = types[source_of_edge]
-    post_types = types[indices]
+
+    _, codes = np.unique(types, return_inverse=True)
+    codes = codes.astype(np.int64)
+    n_types = int(codes.max()) + 1
+    block = codes[source_of_edge] * n_types + codes[indices]
+
+    base = np.argsort(block, kind="stable")
+    shuffled = np.lexsort((rng.random(len(indices)), block))
 
     new_indices = indices.copy()
-    key = np.char.add(np.char.add(pre_types.astype("<U32"), "->"), post_types.astype("<U32"))
-    for block in np.unique(key):
-        members = np.flatnonzero(key == block)
-        if members.size > 1:
-            new_indices[members] = rng.permutation(indices[members])
+    new_indices[base] = indices[shuffled]
     return indptr.copy(), new_indices, weights.copy()
 
 
